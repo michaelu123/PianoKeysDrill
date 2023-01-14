@@ -1,9 +1,17 @@
 {
 	"useTabs": true,
 	"singleQuote": true,
-	"trailingComma": "none",
+	"trailingComma": "es5",
 	"printWidth": 100,
-	"plugins": ["prettier-plugin-svelte"],
-	"pluginSearchDirs": ["."],
-	"overrides": [{ "files": "*.svelte", "options": { "parser": "svelte" } }]
+	"plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
+	"pluginSearchDirs": false,
+	"overrides": [
+		{
+			"files": "*.svelte",
+			"options": {
+				"svelteSortOrder": "options-styles-scripts-markup",
+				"parser": "svelte"
+			}
+		}
+	]
 }

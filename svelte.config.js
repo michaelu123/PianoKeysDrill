@@ -1,10 +1,10 @@
 import adapter from '@sveltejs/adapter-auto';
-import preprocess from "svelte-preprocess";
+import preprocess from 'svelte-preprocess';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	kit: {
-		adapter: adapter()
+		adapter: adapter(),
 	},
 	preprocess: [
 		preprocess({
@@ -15,11 +15,10 @@ const config = {
 		experimental: {
 			inspector: {
 				holdMode: true,
-				showToggleButton: 'always'
-			}
-		}
-	}		
-
+				showToggleButton: 'always',
+			},
+		},
+	},
 };
 
 export default config;
