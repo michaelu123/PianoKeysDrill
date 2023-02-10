@@ -3,12 +3,12 @@
 
 	export let chord;
 	export let name;
+	export let isSharp;
 	$: if (chord) showNotes(chord);
 
 	const x = 6;
 
 	function noteLetter(v) {
-		const isSharp = true;
 		switch (v % 12) {
 			case 0:
 				return 'C';
@@ -118,7 +118,7 @@
 		}
 	}
 
-	export function showNotes(chord) {
+	function showNotes(chord) {
 		const abcText = abc(chord);
 		console.log('abcText', abcText);
 		abcjs.renderAbc(name, abcText, {
@@ -142,6 +142,5 @@
 </script>
 
 <div class="h-80 w-60">
-	<p>{name}</p>
 	<div id={name} />
 </div>
