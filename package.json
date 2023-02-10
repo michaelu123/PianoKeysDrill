@@ -27,5 +27,9 @@
 		"tailwindcss-debug-screens": "^2.2.1",
 		"vite": "^4.0.0"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"abcjs": "^6.1.8",
+		"webmidi": "^3.1.4"
+	}
 }
