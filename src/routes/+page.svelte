@@ -24,7 +24,7 @@
 	}
 
 	function chordKeys(chord) {
-		if (chord == null) return 'C4';
+		if (chord == null || chord.length == 0) return [''];
 		// sort keys by increasing value (=note number)
 		let keysSorted = Object.keys(chord).sort((a, b) => chord[a] - chord[b]);
 		return keysSorted;
@@ -59,8 +59,10 @@
 		let r;
 		let id;
 		const chords = options['chords'];
+		let low = 33;
+		let high = chords == 'none' ? 89 : 82; // so that we do not fold
 		for (;;) {
-			r = getRndInteger(33, 89);
+			r = getRndInteger(low, high);
 			if (r === lastRandomChord) continue;
 			id = Utilities.toNoteIdentifier(r);
 			if (!options['withAccidentals'] && id.length > 2) continue;
@@ -71,11 +73,11 @@
 		c[id] = r;
 		if (chords != 'none') {
 			r += chords == 'major' ? 4 : 3;
-			if (r > 89) r -= 12;
+			// if (r > 89) r -= 12; // fold
 			id = Utilities.toNoteIdentifier(r);
 			c[id] = r;
 			r += chords == 'major' ? 3 : 4;
-			if (r > 89) r -= 12;
+			// if (r > 89) r -= 12; // fold
 			id = Utilities.toNoteIdentifier(r);
 			c[id] = r;
 		}
@@ -132,13 +134,20 @@
 		console.log('5init');
 	}
 
+	function newChord() {
+		setTimeout(() => {
+			chord1 = randomChord();
+			console.log('newChord', chord1);
+		}, 200);
+	}
+
 	console.log('1test');
 	onMount(async () => {
 		console.log('2test');
 		await initMidi();
 		console.log('3test');
 		chord1 = randomChord();
-		chord2 = { C4: 60 };
+		chord2 = { '': 0 };
 		console.log('4test');
 	});
 </script>
@@ -146,17 +155,22 @@
 <div class="flex flex-col items-start justify-center">
 	<ABCChord name="chord1" chord={chord1} {isSharp} {key} />
 	<ABCChord name="chord2" chord={chord2} {isSharp} {key} />
-	<div class="w-full rounded bg-slate-400 p-4">
-		<p class="text-center">{chordOutput}</p>
+	<div class="mt-5 grid grid-cols-2 gap-2">
+		<p>Keys</p>
+		<p>{chordOutput}</p>
+		<p>Accidentals</p>
+		<SlideToggle on:change={newChord} bind:checked={options['withAccidentals']} />
+		<p>Sound</p>
+		<SlideToggle bind:checked={options['sound']}>Sound</SlideToggle>
+		<p>Attack</p>
+		<RangeSlider bind:value={options['attack']} max={100} />
+		<p>Chords?</p>
+		<select class="h-8" on:change={newChord} bind:value={options['chords']}>
+			<option value="none">None</option>
+			<option value="major">Major</option>
+			<option value="minor">Minor</option>
+		</select>
 	</div>
-	<SlideToggle class="mt-10" bind:checked={options['withAccidentals']}>Accidentals</SlideToggle>
-	<SlideToggle class="mt-10" bind:checked={options['sound']}>Sound</SlideToggle>
-	<RangeSlider class="mt-10" bind:value={options['attack']} max={100}>Attack</RangeSlider>
-	<select class="form-select" bind:value={options['chords']}>
-		<option value="none">None</option>
-		<option value="major">Major</option>
-		<option value="minor">Minor</option>
-	</select>
 
 	<!-- <select class="form-select" bind:value={key}>
 		{#each keys as key}

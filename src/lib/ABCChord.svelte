@@ -46,6 +46,9 @@
 		for (let value of Object.values(chord)) {
 			if (clef == 'treble' && value < 60) continue;
 			if (clef == 'bass' && value >= 60) continue;
+			if (value == 0) {
+				return '[z]';
+			}
 			value -= 12; // convert from midi number to ABC numbering, midi C4=60
 			const letter = noteLetter(value);
 			if (value < 12) {
