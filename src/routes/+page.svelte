@@ -14,6 +14,8 @@
 	const x = 6;
 	let isSharp = true;
 	let lastRandomChord = -1;
+	let keys = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F'];
+	let key = 'C';
 
 	$: chordOutput = chordKeys(chord2);
 
@@ -55,14 +57,28 @@
 
 	function randomChord() {
 		let r;
-		do {
+		let id;
+		const chords = options['chords'];
+		for (;;) {
 			r = getRndInteger(33, 89);
-		} while (r === lastRandomChord);
+			if (r === lastRandomChord) continue;
+			id = Utilities.toNoteIdentifier(r);
+			if (!options['withAccidentals'] && id.length > 2) continue;
+			break;
+		}
 		lastRandomChord = r;
-		const id = Utilities.toNoteIdentifier(r);
 		const c = {};
 		c[id] = r;
-		console.log('randChord', c, r, id);
+		if (chords != 'none') {
+			r += chords == 'major' ? 4 : 3;
+			if (r > 89) r -= 12;
+			id = Utilities.toNoteIdentifier(r);
+			c[id] = r;
+			r += chords == 'major' ? 3 : 4;
+			if (r > 89) r -= 12;
+			id = Utilities.toNoteIdentifier(r);
+			c[id] = r;
+		}
 		isSharp = Math.random() < 0.5;
 		playChord(c);
 		return c;
@@ -127,12 +143,24 @@
 	});
 </script>
 
-<div class="flex flex-col items-center justify-center">
-	<SlideToggle bind:checked={options['sound']}>Sound</SlideToggle>
-	<RangeSlider class="mt-10" bind:value={options['attack']} max={100}>Attack</RangeSlider>
-	<ABCChord name="chord1" chord={chord1} {isSharp} />
-	<ABCChord name="chord2" chord={chord2} {isSharp} />
-	<div class="w-fit rounded bg-slate-400 p-4">
-		<p>{chordOutput}</p>
+<div class="flex flex-col items-start justify-center">
+	<ABCChord name="chord1" chord={chord1} {isSharp} {key} />
+	<ABCChord name="chord2" chord={chord2} {isSharp} {key} />
+	<div class="w-full rounded bg-slate-400 p-4">
+		<p class="text-center">{chordOutput}</p>
 	</div>
+	<SlideToggle class="mt-10" bind:checked={options['withAccidentals']}>Accidentals</SlideToggle>
+	<SlideToggle class="mt-10" bind:checked={options['sound']}>Sound</SlideToggle>
+	<RangeSlider class="mt-10" bind:value={options['attack']} max={100}>Attack</RangeSlider>
+	<select class="form-select" bind:value={options['chords']}>
+		<option value="none">None</option>
+		<option value="major">Major</option>
+		<option value="minor">Minor</option>
+	</select>
+
+	<!-- <select class="form-select" bind:value={key}>
+		{#each keys as key}
+			<option value={key}>{key}</option>
+		{/each}
+	</select> -->
 </div>

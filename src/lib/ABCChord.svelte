@@ -3,8 +3,10 @@
 
 	export let chord;
 	export let name;
+	export let key;
 	export let isSharp;
-	$: if (chord) showNotes(chord);
+
+	$: if (chord) showNotes(chord, key);
 
 	const x = 6;
 
@@ -80,7 +82,7 @@
 	function staffFor(chord) {
 		if (chord.length == 0) return '';
 		const [min, max] = minMax(chord);
-		console.log('min', min, 'max', max);
+		// console.log('min', min, 'max', max);
 		if (min < 60 - x && max > 60 + x) return 'piano';
 		return clefFor(chord);
 	}
@@ -93,10 +95,10 @@
 		return max < 60 + x ? 'bass' : 'treble';
 	}
 
-	function abc(chord) {
+	function abc(chord, key) {
 		const staff = staffFor(chord);
 		const clef = clefFor(chord);
-		console.log('staff', staff, 'clef', clef);
+		// console.log('staff', staff, 'clef', clef, 'key', key);
 		if (staff == '') return '\n';
 		if (staff == 'piano') {
 			return (
@@ -105,7 +107,9 @@
 				'%%score {1 2}\n' +
 				'V:1 clef=treble\n' +
 				'V:2 clef=bass\n' +
-				'K:C\n' +
+				'K:' +
+				key +
+				'\n' +
 				'[V:1] ' +
 				noteLetterABC(chord, 'treble') +
 				'\n' +
@@ -114,12 +118,12 @@
 				'\n'
 			);
 		} else {
-			return 'L:1/4\nK:C ' + clef + '\n' + noteLetterABC(chord, '') + '\n';
+			return 'L:1/4\nK:' + key + ' ' + clef + '\n' + noteLetterABC(chord, '') + '\n';
 		}
 	}
 
-	function showNotes(chord) {
-		const abcText = abc(chord);
+	function showNotes(chord, key) {
+		const abcText = abc(chord, key);
 		console.log('abcText', abcText);
 		abcjs.renderAbc(name, abcText, {
 			clickListener: () => unselect(),
@@ -135,6 +139,7 @@
 	}
 
 	function unselect() {
+		// MUH fill is always == "currentColor" !?
 		Array.from(document.getElementsByTagName('path'))
 			.filter((p) => p.getAttribute('fill') === '#ff0000')
 			.forEach((p) => p.setAttribute('fill', null));
