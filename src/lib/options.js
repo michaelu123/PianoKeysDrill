@@ -1,5 +1,5 @@
 export let options = {
-	sound: false,
+	sound: true,
 	attack: 20,
 	withAccidentals: false,
 	withInversions: false,
