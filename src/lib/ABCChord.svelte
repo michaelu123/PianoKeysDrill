@@ -127,7 +127,7 @@
 
 	function showNotes(chord, key) {
 		const abcText = abc(chord, key);
-		console.log('abcText', abcText);
+		// console.log('abcText', abcText);
 		abcjs.renderAbc(name, abcText, {
 			clickListener: () => unselect(),
 			paddingtop: '0',

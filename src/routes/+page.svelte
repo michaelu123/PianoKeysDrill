@@ -1,13 +1,14 @@
 <script>
-	import { WebMidi, Utilities } from 'webmidi/dist/esm/webmidi.esm.js';
+	import { WebMidi, Utilities } from 'webmidi';
 	import { onMount } from 'svelte';
 	import { options } from '$lib/options.js';
 	import ABCChord from '$lib/ABCChord.svelte';
-	// import SlideToggle from '@skeletonlabs/skeleton';
+	import { Chord } from '$lib/music21j/chord';
 	import { SlideToggle, RangeSlider } from '@skeletonlabs/skeleton';
 
 	let errorMessage = '';
 	let midiIsReady = false;
+	let midiOutput = null;
 	let _chord = {};
 	let chord1;
 	let chord2;
@@ -24,21 +25,29 @@
 	}
 
 	function chordKeys(chord) {
-		if (chord == null || chord.length == 0) return [''];
+		if (chord == null || chord.length == 0 || chord[''] == 0) return [''];
 		// sort keys by increasing value (=note number)
 		let keysSorted = Object.keys(chord).sort((a, b) => chord[a] - chord[b]);
-		return keysSorted;
+		let m21Chord = new Chord(keysSorted);
+		return (
+			m21Chord.root().name +
+			' ' +
+			m21Chord.commonName +
+			'(' +
+			m21Chord.inversion() +
+			')' +
+			': ' +
+			keysSorted
+		);
 	}
 
 	function addNote(note) {
 		_chord[note.note.identifier] = note.note.number;
-		console.log('add _chord', _chord);
 		return _chord;
 	}
 
 	function remNote(note) {
 		delete _chord[note.note.identifier];
-		// console.log('rem _chord', _chord);
 	}
 
 	function chordEqual(chord1, chord2) {
@@ -57,98 +66,97 @@
 
 	function randomChord() {
 		let r;
-		let id;
 		const chords = options['chords'];
 		let low = 33;
 		let high = chords == 'none' ? 89 : 82; // so that we do not fold
 		for (;;) {
 			r = getRndInteger(low, high);
 			if (r === lastRandomChord) continue;
-			id = Utilities.toNoteIdentifier(r);
+			let id = Utilities.toNoteIdentifier(r);
 			if (!options['withAccidentals'] && id.length > 2) continue;
 			break;
 		}
 		lastRandomChord = r;
+		let notes;
+		if (chords == 'none') {
+			notes = [r];
+		} else if (chords == 'major') {
+			notes = [r, r + 4, r + 7];
+		} else {
+			notes = [r, r + 3, r + 7];
+		}
+		if (chords != 'none' && options['withInversions']) {
+			let i = getRndInteger(0, 3);
+			if (i > 0) notes[0] += 12;
+			if (i == 2) notes[1] += 12;
+			for (let i = 0; i < 3; i++) {
+				while (notes[i] < 33) notes[i] += 12;
+				while (notes[i] >= 89) notes[i] -= 12;
+			}
+		}
 		const c = {};
-		c[id] = r;
-		if (chords != 'none') {
-			r += chords == 'major' ? 4 : 3;
-			// if (r > 89) r -= 12; // fold
-			id = Utilities.toNoteIdentifier(r);
-			c[id] = r;
-			r += chords == 'major' ? 3 : 4;
-			// if (r > 89) r -= 12; // fold
-			id = Utilities.toNoteIdentifier(r);
-			c[id] = r;
+		for (let n of notes) {
+			c[Utilities.toNoteIdentifier(n)] = n;
 		}
 		isSharp = Math.random() < 0.5;
-		playChord(c);
+		playChord(c, 'X1');
 		return c;
 	}
 
-	function playChord(chord) {
+	function playChord(chord, m) {
 		if (!options['sound']) return;
-		WebMidi.outputs.forEach((midiOutput) => {
-			console.log('playNote', chord, options['attack']);
-			midiOutput.channels[1].playNote(Object.values(chord), {
-				duration: 500,
-				attack: options['attack'] / 100.0,
-			});
+		midiOutput.channels[1].playNote(Object.values(chord), {
+			duration: 500,
+			attack: options['attack'] / 100.0,
 		});
 	}
 
 	async function initMidi() {
-		console.log('1init');
 		await WebMidi.enable((error) => {
 			console.log('2init', error);
 			if (error) {
-				console.log('3init', error);
+				console.log('Webmidi error', error);
 				errorMessage = t('noMidiSupport');
 				return;
 			}
-			if (WebMidi.inputs.length < 1) {
-				console.log('4init', WebMidi.inputs);
-				errorMessage = t('noDeviceFound');
-				return;
-			}
-			WebMidi.inputs.forEach((midiInput) => {
-				console.log('Using ', midiInput);
-				// There are two conventions for note numbers, instead we use octave and offset within octave.
-				midiInput.on('noteon', 'all', (note) => {
-					console.log('noteon', note, note.note.identifier, note.note.number);
-					chord2 = addNote(note);
-					if (chordEqual(chord1, chord2)) {
-						setTimeout(() => (chord1 = randomChord()), 500);
-					} else {
-						setTimeout(() => {
-							playChord(chord1);
-						}, 500);
-					}
-				});
-				midiInput.on('noteoff', 'all', (note) => {
-					remNote(note);
-				});
-			});
-			midiIsReady = true;
 		});
-		console.log('5init');
+		if (WebMidi.inputs.length < 1) {
+			errorMessage = t('noDeviceFound');
+			return;
+		}
+		midiOutput = null;
+		WebMidi.outputs.forEach((mo) => {
+			if (!mo.name.toLowerCase.includes('through')) midiOutput = mo; // How do I detect midi through channels?
+		});
+		WebMidi.inputs.forEach((midiInput) => {
+			// There are two conventions for note numbers, instead we use octave and offset within octave.
+			midiInput.on('noteon', 'all', (note) => {
+				chord2 = addNote(note);
+				if (chordEqual(chord1, chord2)) {
+					setTimeout(() => (chord1 = randomChord()), 500);
+				} else {
+					setTimeout(() => {
+						playChord(chord1, 'X2');
+					}, 500);
+				}
+			});
+			midiInput.on('noteoff', 'all', (note) => {
+				remNote(note);
+			});
+		});
+		midiIsReady = true;
 	}
 
 	function newChord() {
 		setTimeout(() => {
 			chord1 = randomChord();
-			console.log('newChord', chord1);
 		}, 200);
 	}
 
-	console.log('1test');
 	onMount(async () => {
-		console.log('2test');
 		await initMidi();
-		console.log('3test');
 		chord1 = randomChord();
 		chord2 = { '': 0 };
-		console.log('4test');
 	});
 </script>
 
@@ -170,6 +178,10 @@
 			<option value="major">Major</option>
 			<option value="minor">Minor</option>
 		</select>
+		{#if options['chords'] != 'none'}
+			<p>Inversions</p>
+			<SlideToggle on:change={newChord} bind:checked={options['withInversions']} />
+		{/if}
 	</div>
 
 	<!-- <select class="form-select" bind:value={key}>

@@ -1,6 +1,7 @@
 export let options = {
-	sound: true,
+	sound: false,
 	attack: 20,
-	withAccidentals: true,
+	withAccidentals: false,
+	withInversions: false,
 	chords: 'none',
 };
