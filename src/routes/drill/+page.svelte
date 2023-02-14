@@ -1,6 +1,6 @@
 <script>
 	import { WebMidi, Utilities } from 'webmidi';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { options } from '$lib/options.js';
 	import ABCChord from '$lib/ABCChord.svelte';
 	import { Chord } from '$lib/music21j/chord';
@@ -54,7 +54,7 @@
 		if (chord1 == null || chord2 == null) return false;
 		let values1 = Object.values(chord1);
 		let values2 = Object.values(chord2);
-		if (values1.length != values2.length) return false;
+		if (values1.length != values2.length) return null;
 		values1 = values1.sort();
 		values2 = values2.sort();
 		return values1.every((v, x) => v == values2[x]);
@@ -66,9 +66,10 @@
 
 	function randomChord() {
 		let r;
-		const chords = options['chords'];
-		let low = 33;
-		let high = chords == 'none' ? 89 : 82; // so that we do not fold
+		let chords = options['chords'];
+		let low = Utilities.toNoteNumber(options.min);
+		let max = Utilities.toNoteNumber(options.max) + 1;
+		let high = chords == 'none' ? max : max - 7; // so that we do not fold
 		for (;;) {
 			r = getRndInteger(low, high);
 			if (r === lastRandomChord) continue;
@@ -78,11 +79,14 @@
 		}
 		lastRandomChord = r;
 		let notes;
+		if (chords == 'mixed') {
+			chords = Math.random() < 0.5 ? 'major' : 'minor';
+		}
 		if (chords == 'none') {
 			notes = [r];
 		} else if (chords == 'major') {
 			notes = [r, r + 4, r + 7];
-		} else {
+		} else if (chords == 'minor') {
 			notes = [r, r + 3, r + 7];
 		}
 		if (chords != 'none' && options['withInversions']) {
@@ -136,7 +140,10 @@
 			midiInput.on('noteon', 'all', (note) => {
 				chord2 = addNote(note);
 				if (tOut != null) clearTimeout(tOut);
-				if (chordEqual(chord1, chord2)) {
+				const eq = chordEqual(chord1, chord2);
+				if (eq == null) return; // chord2 has not 1 or 3 notes
+				if (eq) {
+					unEqual = false;
 					tOut = setTimeout(() => (chord1 = randomChord()), 500);
 				} else {
 					unEqual = true;
@@ -153,10 +160,13 @@
 	}
 
 	onMount(async () => {
-		console.log('onMount', options);
 		await initMidi();
 		chord1 = randomChord();
 		chord2 = { '': 0 };
+	});
+
+	onDestroy(async () => {
+		await WebMidi.disable();
 	});
 </script>
 

@@ -4,4 +4,6 @@ export let options = {
 	withAccidentals: false,
 	withInversions: false,
 	chords: 'none',
+	min: 'A1',
+	max: 'E6',
 };
