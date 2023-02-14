@@ -1,4 +1,4 @@
-This program is used for learning piano/keyboard keys. It owes to https://github.com/MelvilQ/noten lernen .
+This program is used for learning piano/keyboard keys. It owes to https://github.com/MelvilQ/noten-lernen .
 It shows either a single note or a three note chord, then you must play these notes. If successful, new notes are shown.
 The code requires a Midi Connection to a real device.
 
