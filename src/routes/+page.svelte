@@ -12,6 +12,7 @@
 	let _chord = {};
 	let chord1;
 	let chord2;
+	let unEqual = false;
 	const x = 6;
 	let isSharp = true;
 	let lastRandomChord = -1;
@@ -138,9 +139,11 @@
 				if (chordEqual(chord1, chord2)) {
 					setTimeout(() => (chord1 = randomChord()), 500);
 				} else {
+					unEqual = true;
 					setTimeout(() => {
 						playChord(chord1, 'X2');
-					}, 500);
+						unEqual = false;
+					}, 200);
 				}
 			});
 			midiInput.on('noteoff', 'all', (note) => {
@@ -168,7 +171,9 @@
 		<h2>{errorMessage}</h2>
 	{:else}
 		<div class="mx-4 flex flex-col items-center justify-center">
-			<ABCChord name="chord1" chord={chord1} {isSharp} {key} />
+			<div class:animate-wiggle={unEqual}>
+				<ABCChord name="chord1" chord={chord1} {isSharp} {key} />
+			</div>
 			<ABCChord name="chord2" chord={chord2} {isSharp} {key} />
 		</div>
 		<!-- <div class="mt-5 grid grid-cols-2 gap-3">

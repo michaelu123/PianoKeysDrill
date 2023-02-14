@@ -10,7 +10,19 @@ module.exports = {
 			position: ['top', 'left'],
 			ignore: [],
 		},
-		extend: {},
+		extend: {
+			animation: {
+				wiggle: 'wiggle 10ms ease-in-out infinite',
+			},
+			keyframes: {
+				wiggle: {
+					'0%, 100%': {
+						transform: 'rotate(-12deg)',
+					},
+					'50%': { transform: 'rotate(12deg)' },
+				},
+			},
+		},
 	},
 	plugins: [
 		require('tailwindcss-debug-screens'),
