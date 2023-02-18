@@ -1,76 +1,26 @@
 <script>
 	import abcjs from 'abcjs';
+	import { noteLetterABC } from '$lib/utils.js';
 
-	export let chord;
+	export let abcObj = {
+		chord: null,
+		key: null,
+		isSharp: null,
+		clef: null,
+		scale: null,
+	};
 	export let name;
-	export let key;
-	export let isSharp;
 
-	$: if (chord) showNotes(chord, key);
+	$: if (abcObj.chord) {
+		console.log('C1', name, abcObj);
+		showChord(abcObj.chord, abcObj.key);
+	}
+	$: if (abcObj.scale) {
+		console.log('S1', name, abcObj);
+		showScale(abcObj.clef, abcObj.key, abcObj.scale);
+	}
 
 	const x = 6;
-
-	function noteLetter(v) {
-		switch (v % 12) {
-			case 0:
-				return 'C';
-			case 1:
-				return isSharp ? '^C' : '_D';
-			case 2:
-				return 'D';
-			case 3:
-				return isSharp ? '^D' : '_E';
-			case 4:
-				return 'E';
-			case 5:
-				return 'F';
-			case 6:
-				return isSharp ? '^F' : '_G';
-			case 7:
-				return 'G';
-			case 8:
-				return isSharp ? '^G' : '_A';
-			case 9:
-				return 'A';
-			case 10:
-				return isSharp ? '^A' : '_B';
-			case 11:
-				return 'B';
-		}
-	}
-
-	function noteLetterABC(chord, clef) {
-		// ABC notation reference: https://abcnotation.com/wiki/abc:standard:v2.1#pitch
-		// We are numbering the notes starting with C0 = 0, D0 = 1 and so on. Thus C4 = 48.
-		let letters = [];
-		for (let value of Object.values(chord)) {
-			if (clef == 'treble' && value < 60) continue;
-			if (clef == 'bass' && value >= 60) continue;
-			if (value == 0) {
-				return '[z]';
-			}
-			value -= 12; // convert from midi number to ABC numbering, midi C4=60
-			const letter = noteLetter(value);
-			if (value < 12) {
-				letters.push(letter + ',,,,');
-			} else if (value < 24) {
-				letters.push(letter + ',,,');
-			} else if (value < 36) {
-				letters.push(letter + ',,');
-			} else if (value < 48) {
-				letters.push(letter + ',');
-			} else if (value < 60) {
-				letters.push(letter);
-			} else if (value < 72) {
-				letters.push(letter.toLowerCase());
-			} else if (value < 84) {
-				letters.push(letter.toLowerCase() + "'");
-			} else if (value < 96) {
-				letters.push(letter.toLowerCase() + "''");
-			}
-		}
-		return '[' + letters.join('') + ']';
-	}
 
 	function minMax(chord) {
 		let max = 0;
@@ -98,7 +48,8 @@
 		return max < 60 + x ? 'bass' : 'treble';
 	}
 
-	function abc(chord, key) {
+	function abcChord(chord, key) {
+		const values = Object.values(chord);
 		const staff = staffFor(chord);
 		const clef = clefFor(chord);
 		// console.log('staff', staff, 'clef', clef, 'key', key);
@@ -113,21 +64,23 @@
 				'K:' +
 				key +
 				'\n' +
-				'[V:1] ' +
-				noteLetterABC(chord, 'treble') +
-				'\n' +
-				'[V:2] ' +
-				noteLetterABC(chord, 'bass') +
-				'\n'
+				'[V:1] [' +
+				noteLetterABC(values, 'treble', abcObj.isSharp) +
+				']\n' +
+				'[V:2] [' +
+				noteLetterABC(values, 'bass', abcObj.isSharp) +
+				']\n'
 			);
 		} else {
-			return 'L:1/4\nK:' + key + ' ' + clef + '\n' + noteLetterABC(chord, '') + '\n';
+			return (
+				'L:1/4\nK:' + key + ' ' + clef + '\n[' + noteLetterABC(values, '', abcObj.isSharp) + ']\n'
+			);
 		}
 	}
 
-	function showNotes(chord, key) {
-		const abcText = abc(chord, key);
-		// console.log('abcText', abcText);
+	function showChord(chord, key) {
+		const abcText = abcChord(chord, key);
+		console.log('abcText', abcText);
 		abcjs.renderAbc(name, abcText, {
 			clickListener: () => unselect(),
 			paddingtop: '0',
@@ -137,7 +90,27 @@
 			// It is somewhat tricky to size and layout an SVG image correctly. We start by setting 'responsive'
 			// here, which lets us control size via the width of the parent object.
 			responsive: 'resize',
-			staffwidth: 80, // Sufficient to show a single quarter note.
+			staffwidth: 200,
+		});
+	}
+
+	function abcScale(clef, key, scaleNotes) {
+		return 'L:1/4\nK:' + key + ' ' + clef + '\n' + scaleNotes + '\n';
+	}
+
+	function showScale(clef, key, scaleNotes) {
+		const abcText = abcScale(clef, key, scaleNotes);
+		console.log('abcText', abcText);
+		abcjs.renderAbc(name, abcText, {
+			clickListener: () => unselect(),
+			paddingtop: '0',
+			paddingleft: '0',
+			paddingbottom: '0',
+			paddingright: '0',
+			// It is somewhat tricky to size and layout an SVG image correctly. We start by setting 'responsive'
+			// here, which lets us control size via the width of the parent object.
+			responsive: 'resize',
+			staffwidth: 200,
 		});
 	}
 
@@ -149,6 +122,6 @@
 	}
 </script>
 
-<div class="h-80 w-60">
+<div class="h-80 w-96">
 	<div id={name} />
 </div>
