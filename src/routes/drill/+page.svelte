@@ -11,35 +11,64 @@
 	let midiOutput = null;
 	let _chord = {};
 	let unEqual = false;
+	let success = false;
 	let lastRandomChordBase = -1;
 	let lastKey = '';
-	let tOut = null;
+	let tEqual = null;
+	let tSound = null;
+	let tSucc = null;
 	let abcObj1 = { scale: null, midiScale: null, chord: null };
 	let abcObj2 = { scale: null, midiScale: null, chord: null, pos: 0 };
-	let easy = ['C', 'G', 'F', 'D'];
-	let medium = ['C', 'G', 'F', 'D', 'A', 'Eb', 'Bb'];
+	let easy = ['C', 'D', 'F', 'G'];
+	let medium = ['C', 'D', 'F', 'G', 'A', 'Eb', 'Bb'];
+
+	// scales stuff
+	const fingeringsUp1 = [1, 2, 3, 1, 2, 3, 4, 5];
+	const fingeringsUp2 = [1, 2, 3, 4, 1, 2, 3, 4];
+	const fingeringsDown1 = [5, 4, 3, 2, 1, 3, 2, 1];
+	const fingeringsDown2 = [4, 3, 2, 1, 4, 3, 2, 1];
+	const majorIntervals = [2, 2, 1, 2, 2, 2, 1, 0];
+	const minorIntervals = [2, 1, 2, 2, 1, 2, 2, 0];
+	const accidentals = [
+		'', // C
+		'b', // Des
+		'#', // D
+		'b', // Es
+		'#', // E
+		'b', // F
+		'#', // Fis (Ges)
+		'#', // G
+		'b', // As
+		'#', // A
+		'b', // Bb/B
+		'#', // B/H
+	];
+
+	let abcScales = {};
+	let midiScales = {};
 
 	$: chordOutput = chordKeys(abcObj2.chord);
-
-	function t(s) {
-		return s;
-	}
 
 	function chordKeys(chord) {
 		if (chord == null || chord.length == 0 || chord[''] == 0) return [''];
 		// sort keys by increasing value (=note number)
 		let keysSorted = Object.keys(chord).sort((a, b) => chord[a] - chord[b]);
 		let m21Chord = new Chord(keysSorted);
-		return (
-			m21Chord.root().name +
-			' ' +
-			m21Chord.commonName +
-			'(' +
-			m21Chord.inversion() +
-			')' +
-			': ' +
-			keysSorted
-		);
+		try {
+			return (
+				m21Chord.root().name +
+				' ' +
+				m21Chord.commonName +
+				'(' +
+				m21Chord.inversion() +
+				')' +
+				': ' +
+				keysSorted
+			);
+		} catch (error) {
+			console.log('ERR', error);
+			return 'ERR';
+		}
 	}
 
 	function addNote(note) {
@@ -68,30 +97,30 @@
 	function randomChord() {
 		let r;
 		let mode = options.mode;
-		let chords = options.chords;
+		let keys = options.keys;
 		let low = Utilities.toNoteNumber(options.min);
 		let max = Utilities.toNoteNumber(options.max) + 1;
-		let high = chords == 'none' ? max : max - 7; // so that we do not fold
+		let high = mode == 'keys' ? max : max - 7; // so that we do not fold
 		for (;;) {
 			r = getRndInteger(low, high);
 			if (r === lastRandomChordBase) continue;
 			let id = Utilities.toNoteIdentifier(r);
-			if (!options['withAccidentals'] && id.length > 2) continue;
+			if (!options.withAccidentals && id.length > 2) continue;
 			break;
 		}
 		lastRandomChordBase = r;
 		let notes;
-		if (chords == 'mixed') {
-			chords = Math.random() < 0.5 ? 'major' : 'minor';
+		if (keys == 'mixed') {
+			keys = Math.random() < 0.5 ? 'major' : 'minor';
 		}
 		if (mode == 'keys') {
 			notes = [r];
-		} else if (chords == 'major') {
+		} else if (keys == 'major') {
 			notes = [r, r + 4, r + 7];
-		} else if (chords == 'minor') {
+		} else if (keys == 'minor') {
 			notes = [r, r + 3, r + 7];
 		}
-		if (mode == 'chords' && options['withInversions']) {
+		if (mode == 'chords' && options.withInversions) {
 			let i = getRndInteger(0, 3);
 			if (i > 0) notes[0] += 12;
 			if (i == 2) notes[1] += 12;
@@ -104,19 +133,25 @@
 		for (let n of notes) {
 			c[Utilities.toNoteIdentifier(n)] = n;
 		}
+		abcObj1.scale = null;
 		abcObj1.isSharp = Math.random() < 0.5;
 		abcObj1.key = 'C';
 		abcObj1.chord = c;
+		abcObj2.scale = null;
+		abcObj2.isSharp = abcObj1.isSharp;
+		abcObj2.key = 'C';
+		abcObj2.clef = r < 60 ? 'bass' : 'treble';
+		abcObj2.chord = { '': 0 };
 		playChord(c);
 		return c;
 	}
 
 	function playChord(chord) {
-		if (!options['sound']) return;
+		if (!options.sound) return;
 		console.log('playChord', midiOutput, Object.values(chord));
 		midiOutput.channels[1].playNote(Object.values(chord), {
 			duration: 500,
-			attack: options['attack'] / 100.0,
+			attack: options.attack / 100.0,
 		});
 	}
 
@@ -124,12 +159,12 @@
 		await WebMidi.enable((error) => {
 			if (error) {
 				console.log('Webmidi error', error);
-				errorMessage = t('noMidiSupport');
+				errorMessage = 'noMidiSupport';
 				return;
 			}
 		});
 		if (WebMidi.inputs.length < 1) {
-			errorMessage = t('noMidi Input DeviceFound');
+			errorMessage = 'noMidi Input DeviceFound';
 			return;
 		}
 		midiOutput = null;
@@ -137,7 +172,7 @@
 			if (!mo.name.toLowerCase().includes('through')) midiOutput = mo; // How do I detect midi through channels?
 		});
 		if (midiOutput == null) {
-			errorMessage = t('noMidi Output DeviceFound');
+			errorMessage = 'noMidi Output DeviceFound';
 			return;
 		}
 	}
@@ -150,19 +185,32 @@
 				abcObj2.chord = addNote(note);
 				const eq = chordEqual(abcObj1.chord, abcObj2.chord);
 				if (eq == null) return; // chord2 has not 1 or 3 notes
-				if (tOut != null) {
-					clearTimeout(tOut);
-					tOut = null;
-				}
 				if (eq) {
 					unEqual = false;
-					tOut = setTimeout(() => (abcObj1.chord = randomChord()), 500);
+
+					success = true;
+					if (tSucc != null) {
+						clearTimeout(tSucc);
+					}
+					tSucc = setTimeout(() => {
+						success = false;
+					}, 300);
+
+					if (tSound != null) {
+						clearTimeout(tSound);
+					}
+					tSound = setTimeout(() => randomChord(), 500);
 				} else {
 					unEqual = true;
-					tOut = setTimeout(() => {
-						unEqual = false;
-						playChord(abcObj1.chord);
-					}, 300);
+					if (tEqual != null) {
+						clearTimeout(tEqual);
+					}
+					tEqual = setTimeout(() => (unEqual = false), 300);
+
+					if (tSound != null) {
+						clearTimeout(tSound);
+					}
+					tSound = setTimeout(() => playChord(abcObj1.chord), 300);
 				}
 			});
 			midiInput.on('noteoff', 'all', (note) => {
@@ -171,89 +219,91 @@
 		});
 	}
 
-	const fingeringsUp1 = [1, 2, 3, 1, 2, 3, 4, 5];
-	const fingeringsUp2 = [1, 2, 3, 4, 1, 2, 3, 4];
-	const fingeringsDown1 = [5, 4, 3, 2, 1, 3, 2, 1];
-	const fingeringsDown2 = [4, 3, 2, 1, 4, 3, 2, 1];
-	const majorIntervals = [2, 2, 1, 2, 2, 2, 1, 0];
-	const accidentals = [
-		'', // C
-		'b', // Des
-		'#', // D
-		'b', // Es
-		'#', // E
-		'b', // F
-		'#', // Fis (Ges)
-		'#', // G
-		'b', // As
-		'#', // A
-		'b', // Bb/B
-		'#', // B/H
-	];
-
-	let abcScales = {};
-	let midiScales = {};
-
-	function baseNote(clef, n) {
+	function baseNote(key, clef, n) {
 		// n = 0..11
-		if (clef == 'treble') return n + 60;
-		if (clef == 'bass') return n + (60 - 24);
+		let b;
+		let r = Math.random() < 0.5;
+		if (clef == 'treble') b = n + (r ? 60 : 72);
+		if (clef == 'bass') b = n + (r ? 60 - 24 : 60 - 12);
+		if (key == 'minor') b -= 3;
+		return b;
 	}
 
 	function prepareScales() {
-		for (let i = 0; i < 12; i++) {
-			let key = keyLetterABC(i);
-			let isSharp = accidentals[i] == '#';
-			let mk = {};
-			mk['up'] = {};
-			mk['down'] = {};
-			midiScales[key] = mk;
-			let ak = {};
-			ak['up'] = {};
-			ak['down'] = {};
-			abcScales[key] = ak;
-			for (let clef of ['bass', 'treble']) {
-				let b = baseNote(clef, i);
-				mk['up'][clef] = [];
-				mk['down'][clef] = [];
-				for (let j = 0; j < 8; j++) {
-					mk['up'][clef].push(b);
-					mk['down'][clef].unshift(b);
-					b += majorIntervals[j];
+		for (let mm of ['major', 'minor']) {
+			let mdScales = {};
+			midiScales[mm] = mdScales;
+			let abScales = {};
+			abcScales[mm] = abScales;
+			const intervals = mm == 'major' ? majorIntervals : minorIntervals;
+			for (let i = 0; i < 12; i++) {
+				let key = keyLetterABC(i);
+				let isSharp = accidentals[i] == '#';
+				let mk = {};
+				mk['up'] = {};
+				mk['down'] = {};
+				mdScales[key] = mk;
+				let ak = {};
+				ak['up'] = {};
+				ak['down'] = {};
+				abScales[key] = ak;
+				for (let clef of ['bass', 'treble']) {
+					let b = baseNote(mm, clef, i);
+					mk['up'][clef] = [];
+					mk['down'][clef] = [];
+					for (let j = 0; j < 8; j++) {
+						mk['up'][clef].push(b);
+						mk['down'][clef].unshift(b);
+						b += intervals[j];
+					}
+					ak['up'][clef] = noteLetterABC(mk['up'][clef], '', isSharp);
+					ak['down'][clef] = noteLetterABC(mk['down'][clef], '', isSharp);
 				}
-				ak['up'][clef] = noteLetterABC(mk['up'][clef], clef, isSharp);
-				ak['down'][clef] = noteLetterABC(mk['down'][clef], clef, isSharp);
 			}
 		}
 		console.log('abcScales', abcScales);
 		console.log('midiScales', midiScales);
 	}
 
-	function addScale(scale, note) {}
-
 	function configureScaleInputs() {
 		WebMidi.inputs.forEach((midiInput) => {
 			// There are two conventions for note numbers, instead we use octave and offset within octave.
 			midiInput.on('noteon', 'all', (note) => {
 				let n = note.note.number;
-				if (tOut != null) {
-					clearTimeout(tOut);
-					tOut = null;
-				}
 				abcObj2.midiScale[abcObj2.pos] = n;
 				if (abcObj1.midiScale[abcObj2.pos] == n) {
 					abcObj2.pos += 1;
 				} else {
 					abcObj2.midiScale[abcObj2.pos] = n;
 					unEqual = true;
-					tOut = setTimeout(() => {
-						unEqual = false;
+					if (tEqual != null) {
+						clearTimeout(tEqual);
+					}
+					tEqual = setTimeout(() => (unEqual = false), 300);
+
+					if (tSound != null) {
+						clearTimeout(tSound);
+					}
+					tSound = setTimeout(() => {
 						playChord({ egal: abcObj1.midiScale[abcObj2.pos] });
 					}, 300);
 				}
-				abcObj2.scale = noteLetterABC(abcObj2.midiScale, abcObj2.clef, abcObj2.isSharp);
+				abcObj2.scale = noteLetterABC(abcObj2.midiScale, '', abcObj2.isSharp);
 				if (abcObj2.pos == abcObj1.midiScale.length) {
-					tOut = setTimeout(() => randomScale(), 2000);
+					success = true;
+					if (tSucc != null) {
+						clearTimeout(tSucc);
+					}
+					tSucc = setTimeout(() => {
+						success = false;
+					}, 300);
+
+					if (tSound != null) {
+						clearTimeout(tSound);
+					}
+					tSound = setTimeout(() => {
+						randomScale();
+					}, 500);
 				}
 			});
 			midiInput.on('noteoff', 'all', (note) => {});
@@ -268,7 +318,11 @@
 	}
 
 	function randomScale() {
-		let keys = Object.keys(abcScales);
+		let mm = options.keys;
+		if (mm == 'mixed') {
+			mm = Math.random() < 0.5 ? 'major' : 'minor';
+		}
+		let keys = Object.keys(abcScales[mm]);
 		let key;
 		let isSharp;
 		for (;;) {
@@ -286,8 +340,9 @@
 		let clef = Math.random() < 0.5 ? 'treble' : 'bass';
 		abcObj1.chord = null;
 		abcObj1.key = key;
-		abcObj1.scale = abcScales[key][dir][clef];
-		abcObj1.midiScale = midiScales[key][dir][clef];
+		abcObj1.scale = abcScales[mm][key][dir][clef];
+		console.log('rc1', mm, key, dir, clef, abcObj1.scale);
+		abcObj1.midiScale = midiScales[mm][key][dir][clef];
 		abcObj1.clef = clef;
 
 		abcObj2.chord = null;
@@ -305,7 +360,6 @@
 		} catch (error) {} // Hack
 		await WebMidi.disable();
 		await initMidi();
-		abcObj2.chord = { '': 0 };
 		if (options.mode == 'scales') {
 			prepareScales();
 			configureScaleInputs();
@@ -313,6 +367,7 @@
 		} else {
 			configureChordInputs();
 			randomChord();
+			abcObj2.chord = { '': 0 };
 		}
 	});
 
@@ -328,8 +383,8 @@
 	{#if errorMessage}
 		<h2>{errorMessage}</h2>
 	{:else}
-		<div class="mx-4 flex flex-col items-center justify-center">
-			<div class:animate-wiggle={unEqual}>
+		<div class="mx-4 flex flex-col  items-center justify-center  lg:flex-row lg:justify-between">
+			<div class:animate-wiggle={unEqual} class:animate-bounce={success}>
 				<ABCChord name="oben" abcObj={abcObj1} />
 			</div>
 			<ABCChord name="unten" abcObj={abcObj2} />
@@ -345,9 +400,9 @@
 			{/if}
 		</div>
 		<div class="mt-10 flex w-full justify-center">
-			<button class="btn bg-secondary-500 text-primary-200" on:click={() => goto('/')}
-				>Stop Drill!</button
-			>
+			<button class="btn bg-secondary-500 text-primary-200" on:click={() => goto('/')}>
+				Stop Drill!
+			</button>
 		</div>
 	{/if}
 </div>

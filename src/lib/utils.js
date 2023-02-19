@@ -35,7 +35,7 @@ export function noteLetterABC(chord, clef, isSharp) {
 		if (clef == 'treble' && value < 60) continue;
 		if (clef == 'bass' && value >= 60) continue;
 		if (value == 0) {
-			return '[z]';
+			return 'z';
 		}
 		value -= 12; // convert from midi number to ABC numbering, midi C4=60
 		const letter = noteLetter(value, isSharp);

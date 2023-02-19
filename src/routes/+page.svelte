@@ -79,22 +79,6 @@
 				<RangeSlider class="flex-1" bind:value={options.attack} max={100} />
 			</div>
 			<div class="mt-4 flex">
-				<p class="mr-4 w-20">Low Note</p>
-				<select class="h-8 flex-1" bind:value={options.min}>
-					{#each mins as min}
-						<option value={min}>{min}</option>
-					{/each}
-				</select>
-			</div>
-			<div class="mt-4 flex">
-				<p class="mr-4 w-20">High Note</p>
-				<select class="h-8 flex-1" bind:value={options.max}>
-					{#each maxs as max}
-						<option value={max}>{max}</option>
-					{/each}
-				</select>
-			</div>
-			<div class="mt-4 flex">
 				<p class="mr-4 w-20">Mode</p>
 				<select class="h-8 flex-1" bind:value={options.mode}>
 					<option value="keys">Keys</option>
@@ -102,22 +86,41 @@
 					<option value="scales">Scales</option>
 				</select>
 			</div>
+			{#if options.mode != 'scales'}
+				<div class="mt-4 flex">
+					<p class="mr-4 w-20">Low Note</p>
+					<select class="h-8 flex-1" bind:value={options.min}>
+						{#each mins as min}
+							<option value={min}>{min}</option>
+						{/each}
+					</select>
+				</div>
+				<div class="mt-4 flex">
+					<p class="mr-4 w-20">High Note</p>
+					<select class="h-8 flex-1" bind:value={options.max}>
+						{#each maxs as max}
+							<option value={max}>{max}</option>
+						{/each}
+					</select>
+				</div>
+			{/if}
 
 			{#if options.mode == 'keys'}
 				<div class="mt-4 flex">
 					<p class="mr-4 w-20">Accidentals</p>
 					<SlideToggle class="flex-1" bind:checked={options.withAccidentals} />
 				</div>
-			{/if}
-			{#if options.mode == 'chords'}
+			{:else}
 				<div class="mt-4 flex">
-					<p class="mr-4 w-20">Chords?</p>
-					<select class="h-8 flex-1" bind:value={options.chords}>
+					<p class="mr-4 w-20">Keys</p>
+					<select class="h-8 flex-1" bind:value={options.keys}>
 						<option value="major">Major</option>
 						<option value="minor">Minor</option>
 						<option value="mixed">Mixed</option>
 					</select>
 				</div>
+			{/if}
+			{#if options.mode == 'chords'}
 				<div class="mt-4 flex">
 					<p class="mr-4 w-20">Accidentals</p>
 					<SlideToggle class="flex-1" bind:checked={options.withAccidentals} />
@@ -131,16 +134,16 @@
 				<div class="mt-4 flex">
 					<p class="mr-4 w-20">Difficulty</p>
 					<select class="h-8 flex-1" bind:value={options.difficulty}>
-						<option value="easy">Easy</option>
-						<option value="medium">Medium</option>
-						<option value="hard">Hard</option>n>
+						<option value="easy">Easy (C,D,F,G)</option>
+						<option value="medium">Medium (Easy+A,Eb,Bb)</option>
+						<option value="hard">Hard (all)</option>n>
 					</select>
 				</div>
 			{/if}
 			<div class="mt-10 flex w-full justify-center">
-				<button class="btn bg-secondary-500 text-primary-200" on:click={() => goto('/drill')}
-					>Start Drill!</button
-				>
+				<button class="btn bg-secondary-500 text-primary-200" on:click={() => goto('/drill')}>
+					Start Drill!
+				</button>
 			</div>
 		</div>
 	{/if}

@@ -43,6 +43,7 @@
 	function clefFor(chord) {
 		if (chord.length == 0) return '';
 		const [min, max] = minMax(chord);
+		if (max == 0) return abcObj.clef;
 		if (max < 60) return 'bass';
 		if (min >= 60 - x) return 'treble';
 		return max < 60 + x ? 'bass' : 'treble';
@@ -52,7 +53,20 @@
 		const values = Object.values(chord);
 		const staff = staffFor(chord);
 		const clef = clefFor(chord);
-		// console.log('staff', staff, 'clef', clef, 'key', key);
+		// console.log(
+		// 	'abcChord',
+		// 	name,
+		// 	'abcObj',
+		// 	abcObj,
+		// 	'chord',
+		// 	chord,
+		// 	'staff',
+		// 	staff,
+		// 	'clef',
+		// 	clef,
+		// 	'key',
+		// 	key
+		// );
 		if (staff == '') return '\n';
 		if (staff == 'piano') {
 			return (

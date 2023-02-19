@@ -4,7 +4,7 @@ export let options = {
 	mode: 'keys',
 	withAccidentals: false,
 	withInversions: false,
-	chords: 'major',
+	keys: 'major',
 	min: 'A1',
 	max: 'E6',
 	difficulty: 'easy',
