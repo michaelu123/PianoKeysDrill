@@ -5,7 +5,7 @@
 	import ABCChord from '$lib/ABCChord.svelte';
 	import { Chord } from '$lib/music21j/chord';
 	import { goto } from '$app/navigation';
-	import { noteLetterABC, keyLetterABC } from '$lib/utils.js';
+	import { noteLetterABC, keyLettersABC, getAccidental, min2maj } from '$lib/utils.js';
 
 	let errorMessage = '';
 	let midiOutput = null;
@@ -13,38 +13,153 @@
 	let unEqual = false;
 	let success = false;
 	let lastRandomChordBase = -1;
-	let lastKey = '';
 	let tEqual = null;
 	let tSound = null;
 	let tSucc = null;
 	let abcObj1 = { scale: null, midiScale: null, chord: null };
 	let abcObj2 = { scale: null, midiScale: null, chord: null, pos: 0 };
-	let easy = ['C', 'D', 'F', 'G'];
-	let medium = ['C', 'D', 'F', 'G', 'A', 'Eb', 'Bb'];
+	let lowNote = 'A1';
+	let highNote = 'E6';
 
 	// scales stuff
-	const fingeringsUp1 = [1, 2, 3, 1, 2, 3, 4, 5];
-	const fingeringsUp2 = [1, 2, 3, 4, 1, 2, 3, 4];
+
+	// major scales fingering
+	const fingeringsUpCR = [1, 2, 3, 1, 2, 3, 4, 1]; // C,G,D,A,E,B
+	const fingeringsUpCL = [5, 4, 3, 2, 1, 3, 2, 1]; // C,G,D,A,E,B,F
+	const fingeringsUpFR = [1, 2, 3, 4, 1, 2, 3, 1]; // F
+	const fingeringsUpFsR = [2, 3, 4, 1, 2, 3, 1, 2]; // F#
+	const fingeringsUpFsL = [4, 3, 2, 1, 3, 2, 1, 4]; // F#
+	const fingeringsUpBbR = [2, 1, 2, 3, 1, 2, 3, 4]; // Bb
+	const fingeringsUpBbL = [3, 2, 1, 4, 3, 2, 1, 3]; // Bb, Eb, Ab,Db
+	const fingeringsUpEbR = [3, 1, 2, 3, 4, 1, 2, 3]; // Eb
+	const fingeringsUpAbR = [3, 4, 1, 2, 3, 1, 2, 3]; // Ab
+	const fingeringsUpDbR = [2, 3, 1, 2, 3, 4, 1, 2]; // Db
+	const fingerings = {
+		major: {
+			upRight: {
+				C: fingeringsUpCR,
+				G: fingeringsUpCR,
+				D: fingeringsUpCR,
+				A: fingeringsUpCR,
+				E: fingeringsUpCR,
+				B: fingeringsUpCR,
+				'F#': fingeringsUpFsR, // Gb
+				Gb: fingeringsUpFsR, // Gb
+				Db: fingeringsUpDbR,
+				Ab: fingeringsUpAbR,
+				Eb: fingeringsUpEbR,
+				Bb: fingeringsUpBbR,
+				F: fingeringsUpFR,
+			},
+			upLeft: {
+				C: fingeringsUpCL,
+				G: fingeringsUpCL,
+				D: fingeringsUpCL,
+				A: fingeringsUpCL,
+				E: fingeringsUpCL,
+				B: fingeringsUpCL,
+				'F#': fingeringsUpFsL,
+				Gb: fingeringsUpFsL,
+				Db: fingeringsUpBbL,
+				Ab: fingeringsUpBbL,
+				Eb: fingeringsUpBbL,
+				Bb: fingeringsUpBbL,
+				F: fingeringsUpCL,
+			},
+			downRight: {
+				C: null,
+				G: null,
+				D: null,
+				A: null,
+				E: null,
+				B: null,
+				'F#': null,
+				Db: null,
+				Ab: null,
+				Eb: null,
+				Bb: null,
+				F: null,
+			},
+			downLeft: {
+				C: null,
+				G: null,
+				D: null,
+				A: null,
+				E: null,
+				B: null,
+				'F#': null,
+				Db: null,
+				Ab: null,
+				Eb: null,
+				Bb: null,
+				F: null,
+			},
+		},
+		minor: {
+			upRight: {
+				C: null,
+				G: null,
+				D: null,
+				A: null,
+				E: null,
+				B: null,
+				'F#': null,
+				Db: null,
+				Ab: null,
+				Eb: null,
+				Bb: null,
+				F: null,
+			},
+			upLeft: {
+				C: null,
+				G: null,
+				D: null,
+				A: null,
+				E: null,
+				B: null,
+				'F#': null,
+				Db: null,
+				Ab: null,
+				Eb: null,
+				Bb: null,
+				F: null,
+			},
+			downRight: {
+				C: null,
+				G: null,
+				D: null,
+				A: null,
+				E: null,
+				B: null,
+				'F#': null,
+				Db: null,
+				Ab: null,
+				Eb: null,
+				Bb: null,
+				F: null,
+			},
+			downLeft: {
+				C: null,
+				G: null,
+				D: null,
+				A: null,
+				E: null,
+				B: null,
+				'F#': null,
+				Db: null,
+				Ab: null,
+				Eb: null,
+				Bb: null,
+				F: null,
+			},
+		},
+	};
+
 	const fingeringsDown1 = [5, 4, 3, 2, 1, 3, 2, 1];
 	const fingeringsDown2 = [4, 3, 2, 1, 4, 3, 2, 1];
 	const majorIntervals = [2, 2, 1, 2, 2, 2, 1, 0];
 	const minorIntervals = [2, 1, 2, 2, 1, 2, 2, 0];
-	const accidentals = [
-		'', // C
-		'b', // Des
-		'#', // D
-		'b', // Es
-		'#', // E
-		'b', // F
-		'#', // Fis (Ges)
-		'#', // G
-		'b', // As
-		'#', // A
-		'b', // Bb/B
-		'#', // B/H
-	];
 
-	let abcScales = {};
 	let midiScales = {};
 
 	$: chordOutput = chordKeys(abcObj2.chord);
@@ -98,11 +213,9 @@
 		let r;
 		let mode = options.mode;
 		let keys = options.keys;
-		let low = Utilities.toNoteNumber(options.min);
-		let max = Utilities.toNoteNumber(options.max) + 1;
-		let high = mode == 'keys' ? max : max - 7; // so that we do not fold
+		let high = mode == 'keys' ? highNote : highNote - 7; // so that we do not fold
 		for (;;) {
-			r = getRndInteger(low, high);
+			r = getRndInteger(lowNote, high);
 			if (r === lastRandomChordBase) continue;
 			let id = Utilities.toNoteIdentifier(r);
 			if (!options.withAccidentals && id.length > 2) continue;
@@ -179,7 +292,6 @@
 
 	function configureChordInputs() {
 		WebMidi.inputs.forEach((midiInput) => {
-			// There are two conventions for note numbers, instead we use octave and offset within octave.
 			midiInput.on('noteon', 'all', (note) => {
 				console.log('chordOn', note);
 				abcObj2.chord = addNote(note);
@@ -219,55 +331,36 @@
 		});
 	}
 
-	function baseNote(key, clef, n) {
+	function baseNote(key, n) {
+		// n = 0..12
+		if (n >= 7) n -= 1; // F#,Gb
 		// n = 0..11
-		let b;
-		let r = Math.random() < 0.5;
-		if (clef == 'treble') b = n + (r ? 60 : 72);
-		if (clef == 'bass') b = n + (r ? 60 - 24 : 60 - 12);
-		if (key == 'minor') b -= 3;
-		return b;
+		if (key == 'minor') n += 12 - 3;
+		return n % 12;
 	}
 
-	function prepareScales() {
+	function prepareMidiScales() {
 		for (let mm of ['major', 'minor']) {
 			let mdScales = {};
 			midiScales[mm] = mdScales;
-			let abScales = {};
-			abcScales[mm] = abScales;
 			const intervals = mm == 'major' ? majorIntervals : minorIntervals;
-			for (let i = 0; i < 12; i++) {
-				let key = keyLetterABC(i);
-				let isSharp = accidentals[i] == '#';
-				let mk = {};
-				mk['up'] = {};
-				mk['down'] = {};
+			for (let i = 0; i < 13; i++) {
+				let key = keyLettersABC()[i];
+				console.log('prep', i, key);
+				let mk = [];
 				mdScales[key] = mk;
-				let ak = {};
-				ak['up'] = {};
-				ak['down'] = {};
-				abScales[key] = ak;
-				for (let clef of ['bass', 'treble']) {
-					let b = baseNote(mm, clef, i);
-					mk['up'][clef] = [];
-					mk['down'][clef] = [];
-					for (let j = 0; j < 8; j++) {
-						mk['up'][clef].push(b);
-						mk['down'][clef].unshift(b);
-						b += intervals[j];
-					}
-					ak['up'][clef] = noteLetterABC(mk['up'][clef], '', isSharp);
-					ak['down'][clef] = noteLetterABC(mk['down'][clef], '', isSharp);
+				let b = baseNote(mm, i);
+				for (let j = 0; j < 8; j++) {
+					mk.push(b);
+					b += intervals[j];
 				}
 			}
 		}
-		console.log('abcScales', abcScales);
 		console.log('midiScales', midiScales);
 	}
 
 	function configureScaleInputs() {
 		WebMidi.inputs.forEach((midiInput) => {
-			// There are two conventions for note numbers, instead we use octave and offset within octave.
 			midiInput.on('noteon', 'all', (note) => {
 				let n = note.note.number;
 				abcObj2.midiScale[abcObj2.pos] = n;
@@ -310,40 +403,74 @@
 		});
 	}
 
-	function includes(arr, elem) {
-		for (let i = 0; i < arr.length; i++) {
-			if (arr[i] == elem) return true;
-		}
-		return false;
-	}
-
+	// In the menu we want to show minor scales as a,e,d... different from major C,G,F
+	// but abcjs requires major scale names for the K letter, that shows the b's or #'s.
+	// I.e. K a for a minor will not work, you must say K C.
 	function randomScale() {
 		let mm = options.keys;
 		if (mm == 'mixed') {
 			mm = Math.random() < 0.5 ? 'major' : 'minor';
 		}
-		let keys = Object.keys(abcScales[mm]);
-		let key;
+
 		let isSharp;
-		for (;;) {
-			let n = getRndInteger(0, keys.length);
-			isSharp = accidentals[n] == '#';
-			key = keys[n];
-			console.log('randomScale', key, lastKey, options);
-			if (key == lastKey) continue;
-			if (options.difficulty == 'easy' && !includes(easy, key)) continue;
-			if (options.difficulty == 'medium' && !includes(medium, key)) continue;
-			break;
-		}
-		lastKey = key;
+		let n = getRndInteger(0, options.scales.length);
+		let key = options.scales[n];
+		if (key[0] >= 'a' && key[0] <= 'g') key = min2maj(key); // a -> C
+		isSharp = getAccidental(key) == '#';
+
 		let dir = Math.random() < 0.5 ? 'up' : 'down';
 		let clef = Math.random() < 0.5 ? 'treble' : 'bass';
+		let midiScale = midiScales[mm][key];
+
+		let l = midiScale[0]; // l = note number of key qua construction
+
+		// we want to have our octave somewhere between lowNote and highNote,
+		// and higher than C4-x for treble and lower than C4+x for bass
+		let possible = [];
+		let x = 6;
+		if (clef == 'treble') {
+			while (l < 60 - x && n < lowNote) l += 12;
+			while (l + 12 < highNote) {
+				possible.push(l);
+				l += 12;
+			}
+		}
+		if (clef == 'bass') {
+			while (l < lowNote) l += 12;
+			while (l + 12 <= 60 + x && l < highNote) {
+				possible.push(l);
+				l += 12;
+			}
+		}
+		let mdArr = [];
+		let off = 0;
+		if (possible.length == 0) {
+			// impossible between lowNote, highNote
+			off = clef == 'treble' ? 60 : 36; // start above C4 or C2
+		} else if (possible.length == 1) {
+			off = possible[0]; // there is no alternative!
+		} else {
+			off = possible[getRndInteger(0, possible.length)];
+		}
+		off -= midiScale[0];
+		console.log('off', off);
+		if (dir == 'up') {
+			for (let i = 0; i < 8; i++) {
+				mdArr.push(midiScale[i] + off);
+			}
+		} else {
+			for (let i = 0; i < 8; i++) {
+				mdArr.unshift(midiScale[i] + off);
+			}
+		}
+		console.log('mdArr', mdArr);
+
 		abcObj1.chord = null;
 		abcObj1.key = key;
-		abcObj1.scale = abcScales[mm][key][dir][clef];
-		console.log('rc1', mm, key, dir, clef, abcObj1.scale);
-		abcObj1.midiScale = midiScales[mm][key][dir][clef];
+		abcObj1.midiScale = mdArr;
 		abcObj1.clef = clef;
+		abcObj1.scale = noteLetterABC(mdArr, '', isSharp);
+		console.log('rc1', mm, key, dir, clef, abcObj1.scale);
 
 		abcObj2.chord = null;
 		abcObj2.key = key;
@@ -360,8 +487,12 @@
 		} catch (error) {} // Hack
 		await WebMidi.disable();
 		await initMidi();
+
+		lowNote = Utilities.toNoteNumber(options.min);
+		highNote = Utilities.toNoteNumber(options.max) + 1;
+
 		if (options.mode == 'scales') {
-			prepareScales();
+			prepareMidiScales();
 			configureScaleInputs();
 			randomScale();
 		} else {

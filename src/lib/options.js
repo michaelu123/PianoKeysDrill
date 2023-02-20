@@ -7,5 +7,5 @@ export let options = {
 	keys: 'major',
 	min: 'A1',
 	max: 'E6',
-	difficulty: 'easy',
+	scales: ['C'],
 };

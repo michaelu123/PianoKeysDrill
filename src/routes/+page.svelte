@@ -4,6 +4,7 @@
 	import { options } from '$lib/options.js';
 	import { SlideToggle, RangeSlider } from '@skeletonlabs/skeleton';
 	import { goto } from '$app/navigation';
+	import { menuLetters } from '$lib/utils.js';
 
 	function whiteKeysBetween(a, b) {
 		let r = [];
@@ -132,13 +133,14 @@
 			{/if}
 			{#if options.mode == 'scales'}
 				<div class="mt-4 flex">
-					<p class="mr-4 w-20">Difficulty</p>
-					<select class="h-8 flex-1" bind:value={options.difficulty}>
-						<option value="easy">Easy (C,D,F,G)</option>
-						<option value="medium">Medium (Easy+A,Eb,Bb)</option>
-						<option value="hard">Hard (all)</option>n>
+					<p class="mr-4 w-20">Scales</p>
+					<select multiple class="h-52 flex-1" bind:value={options.scales}>
+						{#each menuLetters(options.keys) as key}
+							<option value={key}>{key}</option>
+						{/each}
 					</select>
 				</div>
+				<p>{options.scales}</p>
 			{/if}
 			<div class="mt-10 flex w-full justify-center">
 				<button class="btn bg-secondary-500 text-primary-200" on:click={() => goto('/drill')}>

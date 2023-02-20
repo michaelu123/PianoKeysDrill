@@ -60,6 +60,103 @@ export function noteLetterABC(chord, clef, isSharp) {
 	return letters.join(' ');
 }
 
-export function keyLetterABC(note) {
-	return ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'As', 'A', 'Bb', 'B'][note];
+export function keyLettersABC() {
+	return ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'As', 'A', 'Bb', 'B'];
+}
+
+let maj2minObj = {
+	C: 'a',
+	Db: 'bb',
+	D: 'b',
+	Eb: 'c',
+	E: 'c#',
+	F: 'd',
+	'F#': 'd#',
+	Gb: 'eb',
+	G: 'e',
+	Ab: 'f',
+	A: 'f#',
+	Bb: 'g',
+	B: 'g#',
+};
+let min2majObj = {
+	a: 'C',
+	bb: 'Db',
+	b: 'D',
+	c: 'Eb',
+	'c#': 'E',
+	d: 'F',
+	'd#': 'F#',
+	eb: 'Gb',
+	e: 'G',
+	f: 'Ab',
+	'f#': 'A',
+	g: 'Bb',
+	'g#': 'B',
+};
+
+export function min2maj(key) {
+	return min2majObj[key];
+}
+
+export function xxxmenuLetters(k) {
+	// return ["c", "c#", "d", "d#", "eb", "e", "f", "f#", "g", "g#", "a", "bb", "b"];
+	// return ['Eb', 'E', 'F', 'F#', 'Gb', 'G', 'As', 'A', 'Bb', 'B', 'C', 'Db', 'D'];
+	return maj2min(k);
+}
+
+const major = ['C', 'G', 'F', 'D', 'Bb', 'A', 'Eb', 'E', 'Ab', 'B', 'Db', 'F#', 'Gb'];
+const minor = ['a', 'e', 'd', 'b', 'g', 'f#', 'c', 'c#', 'f', 'g#', 'bb', 'd#', 'eb'];
+const mixed = [
+	'C',
+	'a',
+	'G',
+	'e',
+	'F',
+	'd',
+	'D',
+	'b',
+	'Bb',
+	'g',
+	'A',
+	'f#',
+	'Eb',
+	'c',
+	'E',
+	'c#',
+	'Ab',
+	'f',
+	'B',
+	'g#',
+	'Db',
+	'bb',
+	'F#',
+	'd#',
+	'Gb',
+	'eb',
+];
+export function menuLetters(keys) {
+	if (keys == 'major') return major;
+	if (keys == 'minor') return minor;
+	if (keys == 'mixed') return mixed;
+}
+
+const accidentals = {
+	C: '',
+	Db: 'b',
+	D: '#',
+	Eb: 'b',
+	E: '#',
+	F: 'b',
+	'F#': '#',
+	Gb: 'b',
+	G: '#',
+	Ab: 'b',
+	A: '#',
+	Bb: 'b',
+	B: '#',
+};
+
+export function getAccidental(key) {
+	return accidentals[key];
 }
