@@ -13,6 +13,7 @@
 	let unEqual = false;
 	let success = false;
 	let lastRandomChordBase = -1;
+	let lastRandomScaleBase = -1;
 	let tEqual = null;
 	let tSound = null;
 	let tSucc = null;
@@ -21,6 +22,7 @@
 	let lowNote = 'A1';
 	let highNote = 'E6';
 	let scaleKey = '';
+	let repeat = false;
 
 	// scales stuff
 
@@ -29,26 +31,25 @@
 	const fingeringsUpFR = [1, 2, 3, 4, 1, 2, 3, 1]; // F
 	const fingeringsUpFsR = [2, 3, 4, 1, 2, 3, 1, 2]; // F#/Gb
 	const fingeringsUpBbR = [2, 1, 2, 3, 1, 2, 3, 4]; // Bb
-	const fingeringsUpEbR = [3, 1, 2, 3, 4, 1, 2, 3]; // Eb
-	const fingeringsUpAbR = [3, 4, 1, 2, 3, 1, 2, 3]; // Ab
+	const fingeringsUpEbR = [2, 1, 2, 3, 4, 1, 2, 3]; // Eb
+	const fingeringsUpAbR = [2, 3, 1, 2, 3, 4, 1, 2]; // Ab
 	const fingeringsUpDbR = [2, 3, 1, 2, 3, 4, 1, 2]; // Db
 
-	const fingeringsUpCL = [5, 4, 3, 2, 1, 3, 2, 1]; // C,G,D,A,E,B,F
-	const fingeringsUpFsL = [4, 3, 2, 1, 3, 2, 1, 4]; // F#
+	const fingeringsUpCL = [5, 4, 3, 2, 1, 3, 2, 1]; // C,G,D,A,E,F
+	const fingeringsUpBL = [4, 3, 2, 1, 4, 3, 2, 1]; // B
+	const fingeringsUpFsL = [4, 3, 2, 1, 3, 2, 1, 4]; // F#/Gb
 	const fingeringsUpBbL = [3, 2, 1, 4, 3, 2, 1, 3]; // Bb, Eb, Ab,Db
 
 	const fingeringsDownCR = [5, 4, 3, 2, 1, 3, 2, 1]; // C,G,D,A,E,B
 	const fingeringsDownFR = [4, 3, 2, 1, 4, 3, 2, 1]; // F,
 	const fingeringsDownBbR = [4, 3, 2, 1, 3, 2, 1, 4]; // Bb
-	const fingeringsDownEbR = [3, 2, 1, 4, 3, 2, 1, 3]; // Eb
-	const fingeringsDownAbR = [3, 2, 1, 4, 3, 2, 1, 4]; // Ab
-	const fingeringsDownDbR = [2, 1, 4, 3, 2, 1, 3, 2]; // Db
+	const fingeringsDownEbR = [2, 1, 4, 3, 2, 1, 3, 2]; // Eb,Ab,Db
+	const fingeringsDownFsR = [2, 1, 3, 2, 1, 4, 3, 2]; // F#/Gb
 
-	const fingeringsDownCL = [12312341]; // C,G,D,A,E,F
-	const fingeringsDownBL = [12341231]; // B
-	const fingeringsDownBbL = [21234123]; // Bb
-	const fingeringsDownEbL = [31234123]; // Eb,Ab,Db
-	const fingeringsDownGbL = [41231234]; // Gb
+	const fingeringsDownCL = [1, 2, 3, 1, 2, 3, 4, 1]; // C,G,D,A,E,F
+	const fingeringsDownBL = [1, 2, 3, 4, 1, 2, 3, 1]; // B
+	const fingeringsDownBbL = [2, 1, 2, 3, 4, 1, 2, 3]; // Bb,Eb,Ab,Db
+	const fingeringsDownGbL = [2, 1, 2, 3, 1, 2, 3, 4]; // F#/Gb
 
 	const fingerings = {
 		major: {
@@ -73,7 +74,7 @@
 				D: fingeringsUpCL,
 				A: fingeringsUpCL,
 				E: fingeringsUpCL,
-				B: fingeringsUpCL,
+				B: fingeringsUpBL,
 				'F#': fingeringsUpFsL,
 				Gb: fingeringsUpFsL,
 				Db: fingeringsUpBbL,
@@ -89,10 +90,10 @@
 				A: fingeringsDownCR,
 				E: fingeringsDownCR,
 				B: fingeringsDownCR,
-				'F#': fingeringsDownCR,
+				'F#': fingeringsDownFsR,
 				Gb: fingeringsDownCR,
-				Db: fingeringsDownDbR,
-				Ab: fingeringsDownAbR,
+				Db: fingeringsDownEbR,
+				Ab: fingeringsDownEbR,
 				Eb: fingeringsDownEbR,
 				Bb: fingeringsDownBbR,
 				F: fingeringsDownFR,
@@ -106,9 +107,9 @@
 				B: fingeringsDownBL,
 				'F#': fingeringsDownGbL,
 				Gb: fingeringsDownGbL,
-				Db: fingeringsDownEbL,
-				Ab: fingeringsDownEbL,
-				Eb: fingeringsDownEbL,
+				Db: fingeringsDownBbL,
+				Ab: fingeringsDownBbL,
+				Eb: fingeringsDownBbL,
 				Bb: fingeringsDownBbL,
 				F: fingeringsDownCL,
 			},
@@ -230,10 +231,10 @@
 	}
 
 	function randomChord() {
-		let r;
 		let mode = options.mode;
 		let keys = options.keys;
 		let high = mode == 'keys' ? highNote : highNote - 7; // so that we do not fold
+		let r;
 		for (;;) {
 			r = getRndInteger(lowNote, high);
 			if (r === lastRandomChordBase) continue;
@@ -426,89 +427,95 @@
 	// but abcjs requires major scale names for the K letter, that shows the b's or #'s.
 	// I.e. K a for a minor will not work, you must say K C.
 	function randomScale() {
-		let mm = options.keys;
-		if (mm == 'mixed') {
-			mm = Math.random() < 0.5 ? 'major' : 'minor';
-		}
-
-		let isSharp;
-		let n = getRndInteger(0, options.scales.length);
-		let key = options.scales[n];
-		scaleKey = key;
-		if (key[0] >= 'a' && key[0] <= 'g') key = min2maj(key); // a -> C
-		isSharp = getAccidental(key) == '#';
-
-		let dir = Math.random() < 0.5 ? 'up' : 'down';
-		let clef = Math.random() < 0.5 ? 'treble' : 'bass';
-		let midiScale = midiScales[mm][key];
-
-		let l = midiScale[0]; // l = note number of key qua construction
-
-		// we want to have our octave somewhere between lowNote and highNote,
-		// and higher than C4-x for treble and lower than C4+x for bass
-		let possible = [];
-		let x = 6;
-		if (clef == 'treble') {
-			while (l < 60 - x && n < lowNote) l += 12;
-			while (l + 12 < highNote) {
-				possible.push(l);
-				l += 12;
+		if (!repeat) {
+			let mm = options.keys;
+			if (mm == 'mixed') {
+				mm = Math.random() < 0.5 ? 'major' : 'minor';
 			}
-		}
-		if (clef == 'bass') {
-			while (l < lowNote) l += 12;
-			while (l + 12 <= 60 + x && l < highNote) {
-				possible.push(l);
-				l += 12;
-			}
-		}
-		let mdArr = [];
-		let off = 0;
-		if (possible.length == 0) {
-			// impossible between lowNote, highNote
-			off = clef == 'treble' ? 60 : 36; // start above C4 or C2
-		} else if (possible.length == 1) {
-			off = possible[0]; // there is no alternative!
-		} else {
-			off = possible[getRndInteger(0, possible.length)];
-		}
-		off -= midiScale[0];
-		console.log('off', off);
-		if (dir == 'up') {
-			for (let i = 0; i < 8; i++) {
-				mdArr.push(midiScale[i] + off);
-			}
-		} else {
-			for (let i = 0; i < 8; i++) {
-				mdArr.unshift(midiScale[i] + off);
-			}
-		}
-		console.log('mdArr', mdArr);
 
-		let fingering = null;
-		if (options.withFingering) {
-			let fingerDir;
-			if (dir == 'up') {
-				fingerDir = clef == 'treble' ? 'upRight' : 'upLeft';
+			let r;
+			for (;;) {
+				r = getRndInteger(0, options.scales.length);
+				if (r === lastRandomScaleBase) continue;
+				break;
+			}
+			lastRandomScaleBase = r;
+			let key = options.scales[r];
+			scaleKey = key;
+			if (key[0] >= 'a' && key[0] <= 'g') key = min2maj(key); // a -> C
+			let isSharp = getAccidental(key) == '#';
+			let dir = Math.random() < 0.5 ? 'up' : 'down';
+			let clef = Math.random() < 0.5 ? 'treble' : 'bass';
+			let midiScale = midiScales[mm][key];
+
+			let l = midiScale[0]; // l = note number of key qua construction
+			// we want to have our octave somewhere between lowNote and highNote,
+			// and higher than C4-x for treble and lower than C4+x for bass
+			let possible = [];
+			let x = 6;
+			if (clef == 'treble') {
+				while (l < 60 - x && n < lowNote) l += 12;
+				while (l + 12 < highNote) {
+					possible.push(l);
+					l += 12;
+				}
+			}
+			if (clef == 'bass') {
+				while (l < lowNote) l += 12;
+				while (l + 12 <= 60 + x && l < highNote) {
+					possible.push(l);
+					l += 12;
+				}
+			}
+			let mdArr = [];
+			let off = 0;
+			if (possible.length == 0) {
+				// impossible between lowNote, highNote
+				off = clef == 'treble' ? 60 : 36; // start above C4 or C2
+			} else if (possible.length == 1) {
+				off = possible[0]; // there is no alternative!
 			} else {
-				fingerDir = clef == 'treble' ? 'downRight' : 'downLeft';
+				off = possible[getRndInteger(0, possible.length)];
 			}
-			fingering = fingerings[mm][fingerDir][key];
+			off -= midiScale[0];
+			console.log('off', off);
+			if (dir == 'up') {
+				for (let i = 0; i < 8; i++) {
+					mdArr.push(midiScale[i] + off);
+				}
+			} else {
+				for (let i = 0; i < 8; i++) {
+					mdArr.unshift(midiScale[i] + off);
+				}
+			}
+			console.log('mdArr', mdArr);
+
+			let fingering = null;
+			if (options.withFingering) {
+				let fingerDir;
+				if (dir == 'up') {
+					fingerDir = clef == 'treble' ? 'upRight' : 'upLeft';
+				} else {
+					fingerDir = clef == 'treble' ? 'downRight' : 'downLeft';
+				}
+				fingering = fingerings[mm][fingerDir][key];
+			}
+
+			abcObj1.chord = null;
+			abcObj1.key = key;
+			abcObj1.midiScale = mdArr;
+			abcObj1.clef = clef;
+			abcObj1.isSharp = isSharp;
+			abcObj1.scale = noteLetterABC(mdArr, '', isSharp, fingering);
+			console.log('rc1', mm, key, dir, clef, abcObj1.scale, fingering);
+			repeat = options.repeat;
 		}
-
-		abcObj1.chord = null;
-		abcObj1.key = key;
-		abcObj1.midiScale = mdArr;
-		abcObj1.clef = clef;
-		abcObj1.scale = noteLetterABC(mdArr, '', isSharp, fingering);
-		// console.log('rc1', mm, key, dir, clef, abcObj1.scale, fingering);
-
 		abcObj2.chord = null;
-		abcObj2.key = key;
+		abcObj2.key = abcObj1.key;
 		abcObj2.scale = ['z'];
 		abcObj2.midiScale = [];
-		abcObj2.clef = clef;
-		abcObj2.isSharp = isSharp;
+		abcObj2.clef = abcObj1.clef;
+		abcObj2.isSharp = abcObj1.isSharp;
 		abcObj2.pos = 0;
 	}
 
@@ -568,10 +575,21 @@
 				</div>
 			{/if}
 		</div>
-		<div class="mt-10 flex w-full justify-center">
+		<div class="mt-10 flex w-full justify-around">
 			<button class="btn bg-secondary-500 text-primary-200" on:click={() => goto('/')}>
 				Stop Drill!
 			</button>
+			{#if options.repeat}
+				<button
+					class="btn bg-secondary-500 text-primary-200"
+					on:click={() => {
+						repeat = false;
+						randomScale();
+					}}
+				>
+					Next Scale
+				</button>
+			{/if}
 		</div>
 	{/if}
 </div>

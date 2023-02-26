@@ -9,4 +9,5 @@ export let options = {
 	min: 'A1',
 	max: 'E6',
 	scales: ['C'],
+	repeat: false,
 };

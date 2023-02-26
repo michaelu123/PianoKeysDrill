@@ -140,9 +140,15 @@
 						{/each}
 					</select>
 				</div>
-				<div class="mt-4 flex">
-					<p class="mr-4 w-20">Fingering</p>
-					<SlideToggle class="flex-1" bind:checked={options.withFingering} />
+				<div class="mt-4 flex flex-row justify-between">
+					<div class="flex flex-row">
+						<p class="mr-4 w-20">Fingering</p>
+						<SlideToggle class="flex-1" bind:checked={options.withFingering} />
+					</div>
+					<div class="flex flex-row">
+						<p class="ml-10 mr-4 w-20">Repeat</p>
+						<SlideToggle class="flex-1" bind:checked={options.repeat} />
+					</div>
 				</div>
 			{/if}
 			<div class="mt-10 flex w-full justify-center">
