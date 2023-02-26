@@ -27,10 +27,11 @@ export function noteLetter(v, isSharp) {
 	}
 }
 
-export function noteLetterABC(chord, clef, isSharp) {
+export function noteLetterABC(chord, clef, isSharp, fingering) {
 	// ABC notation reference: https://abcnotation.com/wiki/abc:standard:v2.1#pitch
 	// We are numbering the notes starting with C0 = 0, D0 = 1 and so on. Thus C4 = 48.
 	let letters = [];
+	let f = 0;
 	for (let value of Object.values(chord)) {
 		if (clef == 'treble' && value < 60) continue;
 		if (clef == 'bass' && value >= 60) continue;
@@ -38,7 +39,12 @@ export function noteLetterABC(chord, clef, isSharp) {
 			return 'z';
 		}
 		value -= 12; // convert from midi number to ABC numbering, midi C4=60
-		const letter = noteLetter(value, isSharp);
+		let letter = noteLetter(value, isSharp);
+		if (fingering) {
+			// only for scales, implies chord.length = 8
+			letter = '!' + fingering[f] + '!' + letter;
+			f++;
+		}
 		if (value < 12) {
 			letters.push(letter + ',,,,');
 		} else if (value < 24) {
@@ -61,7 +67,7 @@ export function noteLetterABC(chord, clef, isSharp) {
 }
 
 export function keyLettersABC() {
-	return ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'As', 'A', 'Bb', 'B'];
+	return ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 }
 
 let maj2minObj = {

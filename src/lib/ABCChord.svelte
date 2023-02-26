@@ -79,15 +79,21 @@
 				key +
 				'\n' +
 				'[V:1] [' +
-				noteLetterABC(values, 'treble', abcObj.isSharp) +
+				noteLetterABC(values, 'treble', abcObj.isSharp, null) +
 				']\n' +
 				'[V:2] [' +
-				noteLetterABC(values, 'bass', abcObj.isSharp) +
+				noteLetterABC(values, 'bass', abcObj.isSharp, null) +
 				']\n'
 			);
 		} else {
 			return (
-				'L:1/4\nK:' + key + ' ' + clef + '\n[' + noteLetterABC(values, '', abcObj.isSharp) + ']\n'
+				'L:1/4\nK:' +
+				key +
+				' ' +
+				clef +
+				'\n[' +
+				noteLetterABC(values, '', abcObj.isSharp, null) +
+				']\n'
 			);
 		}
 	}

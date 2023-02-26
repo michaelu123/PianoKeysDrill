@@ -140,7 +140,10 @@
 						{/each}
 					</select>
 				</div>
-				<p>{options.scales}</p>
+				<div class="mt-4 flex">
+					<p class="mr-4 w-20">Fingering</p>
+					<SlideToggle class="flex-1" bind:checked={options.withFingering} />
+				</div>
 			{/if}
 			<div class="mt-10 flex w-full justify-center">
 				<button class="btn bg-secondary-500 text-primary-200" on:click={() => goto('/drill')}>

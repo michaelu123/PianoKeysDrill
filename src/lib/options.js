@@ -4,6 +4,7 @@ export let options = {
 	mode: 'keys',
 	withAccidentals: false,
 	withInversions: false,
+	withFingering: false,
 	keys: 'major',
 	min: 'A1',
 	max: 'E6',

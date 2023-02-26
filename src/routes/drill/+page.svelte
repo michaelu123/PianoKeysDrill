@@ -20,20 +20,36 @@
 	let abcObj2 = { scale: null, midiScale: null, chord: null, pos: 0 };
 	let lowNote = 'A1';
 	let highNote = 'E6';
+	let scaleKey = '';
 
 	// scales stuff
 
 	// major scales fingering
 	const fingeringsUpCR = [1, 2, 3, 1, 2, 3, 4, 1]; // C,G,D,A,E,B
-	const fingeringsUpCL = [5, 4, 3, 2, 1, 3, 2, 1]; // C,G,D,A,E,B,F
 	const fingeringsUpFR = [1, 2, 3, 4, 1, 2, 3, 1]; // F
-	const fingeringsUpFsR = [2, 3, 4, 1, 2, 3, 1, 2]; // F#
-	const fingeringsUpFsL = [4, 3, 2, 1, 3, 2, 1, 4]; // F#
+	const fingeringsUpFsR = [2, 3, 4, 1, 2, 3, 1, 2]; // F#/Gb
 	const fingeringsUpBbR = [2, 1, 2, 3, 1, 2, 3, 4]; // Bb
-	const fingeringsUpBbL = [3, 2, 1, 4, 3, 2, 1, 3]; // Bb, Eb, Ab,Db
 	const fingeringsUpEbR = [3, 1, 2, 3, 4, 1, 2, 3]; // Eb
 	const fingeringsUpAbR = [3, 4, 1, 2, 3, 1, 2, 3]; // Ab
 	const fingeringsUpDbR = [2, 3, 1, 2, 3, 4, 1, 2]; // Db
+
+	const fingeringsUpCL = [5, 4, 3, 2, 1, 3, 2, 1]; // C,G,D,A,E,B,F
+	const fingeringsUpFsL = [4, 3, 2, 1, 3, 2, 1, 4]; // F#
+	const fingeringsUpBbL = [3, 2, 1, 4, 3, 2, 1, 3]; // Bb, Eb, Ab,Db
+
+	const fingeringsDownCR = [5, 4, 3, 2, 1, 3, 2, 1]; // C,G,D,A,E,B
+	const fingeringsDownFR = [4, 3, 2, 1, 4, 3, 2, 1]; // F,
+	const fingeringsDownBbR = [4, 3, 2, 1, 3, 2, 1, 4]; // Bb
+	const fingeringsDownEbR = [3, 2, 1, 4, 3, 2, 1, 3]; // Eb
+	const fingeringsDownAbR = [3, 2, 1, 4, 3, 2, 1, 4]; // Ab
+	const fingeringsDownDbR = [2, 1, 4, 3, 2, 1, 3, 2]; // Db
+
+	const fingeringsDownCL = [12312341]; // C,G,D,A,E,F
+	const fingeringsDownBL = [12341231]; // B
+	const fingeringsDownBbL = [21234123]; // Bb
+	const fingeringsDownEbL = [31234123]; // Eb,Ab,Db
+	const fingeringsDownGbL = [41231234]; // Gb
+
 	const fingerings = {
 		major: {
 			upRight: {
@@ -43,8 +59,8 @@
 				A: fingeringsUpCR,
 				E: fingeringsUpCR,
 				B: fingeringsUpCR,
-				'F#': fingeringsUpFsR, // Gb
-				Gb: fingeringsUpFsR, // Gb
+				'F#': fingeringsUpFsR,
+				Gb: fingeringsUpFsR,
 				Db: fingeringsUpDbR,
 				Ab: fingeringsUpAbR,
 				Eb: fingeringsUpEbR,
@@ -67,32 +83,34 @@
 				F: fingeringsUpCL,
 			},
 			downRight: {
-				C: null,
-				G: null,
-				D: null,
-				A: null,
-				E: null,
-				B: null,
-				'F#': null,
-				Db: null,
-				Ab: null,
-				Eb: null,
-				Bb: null,
-				F: null,
+				C: fingeringsDownCR,
+				G: fingeringsDownCR,
+				D: fingeringsDownCR,
+				A: fingeringsDownCR,
+				E: fingeringsDownCR,
+				B: fingeringsDownCR,
+				'F#': fingeringsDownCR,
+				Gb: fingeringsDownCR,
+				Db: fingeringsDownDbR,
+				Ab: fingeringsDownAbR,
+				Eb: fingeringsDownEbR,
+				Bb: fingeringsDownBbR,
+				F: fingeringsDownFR,
 			},
 			downLeft: {
-				C: null,
-				G: null,
-				D: null,
-				A: null,
-				E: null,
-				B: null,
-				'F#': null,
-				Db: null,
-				Ab: null,
-				Eb: null,
-				Bb: null,
-				F: null,
+				C: fingeringsDownCL,
+				G: fingeringsDownCL,
+				D: fingeringsDownCL,
+				A: fingeringsDownCL,
+				E: fingeringsDownCL,
+				B: fingeringsDownBL,
+				'F#': fingeringsDownGbL,
+				Gb: fingeringsDownGbL,
+				Db: fingeringsDownEbL,
+				Ab: fingeringsDownEbL,
+				Eb: fingeringsDownEbL,
+				Bb: fingeringsDownBbL,
+				F: fingeringsDownCL,
 			},
 		},
 		minor: {
@@ -104,6 +122,7 @@
 				E: null,
 				B: null,
 				'F#': null,
+				Gb: null,
 				Db: null,
 				Ab: null,
 				Eb: null,
@@ -118,6 +137,7 @@
 				E: null,
 				B: null,
 				'F#': null,
+				Gb: null,
 				Db: null,
 				Ab: null,
 				Eb: null,
@@ -132,6 +152,7 @@
 				E: null,
 				B: null,
 				'F#': null,
+				Gb: null,
 				Db: null,
 				Ab: null,
 				Eb: null,
@@ -146,6 +167,7 @@
 				E: null,
 				B: null,
 				'F#': null,
+				Gb: null,
 				Db: null,
 				Ab: null,
 				Eb: null,
@@ -155,8 +177,6 @@
 		},
 	};
 
-	const fingeringsDown1 = [5, 4, 3, 2, 1, 3, 2, 1];
-	const fingeringsDown2 = [4, 3, 2, 1, 4, 3, 2, 1];
 	const majorIntervals = [2, 2, 1, 2, 2, 2, 1, 0];
 	const minorIntervals = [2, 1, 2, 2, 1, 2, 2, 0];
 
@@ -346,7 +366,6 @@
 			const intervals = mm == 'major' ? majorIntervals : minorIntervals;
 			for (let i = 0; i < 13; i++) {
 				let key = keyLettersABC()[i];
-				console.log('prep', i, key);
 				let mk = [];
 				mdScales[key] = mk;
 				let b = baseNote(mm, i);
@@ -381,7 +400,7 @@
 						playChord({ egal: abcObj1.midiScale[abcObj2.pos] });
 					}, 300);
 				}
-				abcObj2.scale = noteLetterABC(abcObj2.midiScale, '', abcObj2.isSharp);
+				abcObj2.scale = noteLetterABC(abcObj2.midiScale, '', abcObj2.isSharp, null);
 				if (abcObj2.pos == abcObj1.midiScale.length) {
 					success = true;
 					if (tSucc != null) {
@@ -415,6 +434,7 @@
 		let isSharp;
 		let n = getRndInteger(0, options.scales.length);
 		let key = options.scales[n];
+		scaleKey = key;
 		if (key[0] >= 'a' && key[0] <= 'g') key = min2maj(key); // a -> C
 		isSharp = getAccidental(key) == '#';
 
@@ -465,12 +485,23 @@
 		}
 		console.log('mdArr', mdArr);
 
+		let fingering = null;
+		if (options.withFingering) {
+			let fingerDir;
+			if (dir == 'up') {
+				fingerDir = clef == 'treble' ? 'upRight' : 'upLeft';
+			} else {
+				fingerDir = clef == 'treble' ? 'downRight' : 'downLeft';
+			}
+			fingering = fingerings[mm][fingerDir][key];
+		}
+
 		abcObj1.chord = null;
 		abcObj1.key = key;
 		abcObj1.midiScale = mdArr;
 		abcObj1.clef = clef;
-		abcObj1.scale = noteLetterABC(mdArr, '', isSharp);
-		console.log('rc1', mm, key, dir, clef, abcObj1.scale);
+		abcObj1.scale = noteLetterABC(mdArr, '', isSharp, fingering);
+		// console.log('rc1', mm, key, dir, clef, abcObj1.scale, fingering);
 
 		abcObj2.chord = null;
 		abcObj2.key = key;
@@ -521,7 +552,14 @@
 			<ABCChord name="unten" abcObj={abcObj2} />
 		</div>
 		<div class="mx-4">
-			{#if options.mode != 'scales'}
+			{#if options.mode == 'scales'}
+				<div class="mt-4 flex">
+					<p class="mr-4 w-20 flex-none">Scale</p>
+					<div class="flex-1 bg-zinc-100 dark:bg-zinc-600">
+						<p class="text-center">{scaleKey}</p>
+					</div>
+				</div>
+			{:else}
 				<div class="mt-4 flex">
 					<p class="mr-4 w-20 flex-none">Keys</p>
 					<div class="flex-1 bg-zinc-100 dark:bg-zinc-600">
