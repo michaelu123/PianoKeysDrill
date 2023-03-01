@@ -17,6 +17,19 @@
 				"uriFormat": "http://localhost:%s",
 				"webRoot": "${workspaceFolder}"
 			}
+		},
+		{
+			"name": "Preview",
+			"request": "launch",
+			"runtimeExecutable": "npx",
+			"runtimeArgs": ["vite", "preview"],
+			"type": "node",
+			"serverReadyAction": {
+				"action": "debugWithChrome",
+				"pattern": "Local: http://localhost:([0-9]+)",
+				"uriFormat": "http://localhost:%s",
+				"webRoot": "${workspaceFolder}"
+			}
 		}
 	]
 }

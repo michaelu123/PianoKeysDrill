@@ -32,3 +32,5 @@ and run the server with
 
 Do not call node build, this server does not support HTTPS.
 Without HTTPS, calls of crypto.randomUUID() and navigator.requestMIDIAccess will not work!
+
+npm run preview -- --host=muhct

@@ -28,6 +28,7 @@ httpsServer.listen(SSLPORT, function () {
 app.get('/healthcheck', (req, res) => {
 	res.end('ok');
 });
+console.log('MUH2');
 
 // let SvelteKit handle everything else, including serving prerendered pages and static assets
 app.use(handler);
